@@ -8,9 +8,11 @@ const orderSchema = new Schema({
   _user: { type: Schema.Types.ObjectId, ref: "User" },
   destination: String,
   working: { type: Boolean, default: false },
+  product:String,
   // dateOrdered: Date,
   // dateRecieved: Date,
   // dateDelivered: Date,
+  recieved:{type:Boolean,default:false},
   coordinates:[Number],
   images: [String]
 });

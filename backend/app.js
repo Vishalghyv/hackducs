@@ -33,7 +33,7 @@ const SignInManu=require('./Manufacture/signin');
 const SignUpDel =require('./Delivery/signup');
 const signuptempDel=require('./Delivery/signupTemplate');
 const SignInDel=require('./Delivery/signin');
-const DeliveryBoy=require('./models/deliveryBoy');
+const Driver=require('./models/Driver');
 const Manufacturer=require('./models/Manufacturer');
 const OrderPlace=require('./models/Order');
 const Images=require('./showImages');
@@ -121,20 +121,33 @@ app.post('/signinManu', sign(Manufacturer));
 //////DELIVERY GUY ROUTES/////////////////////
 
 app.get('/signupDel',(req,res)=>{
-  res.send(layout(SignUpDel()));
+  res.sendFile(path.join(__dirname, 'delAdd.html'));
 });
 
-app.post('/signupDel',[
-  contactvalidity,
-  emailexists,
-],handleErrors(signuptempDel,DeliveryBoy),
-create(DeliveryBoy));
+app.post('/signupDel',requireLogin,async (req,res)=>{
+  console.log(req.body);
+  res.send("submitter");
+  var record={
+    fullName:req.body.fullName,
+    email:req.body.email,
+    password:req.body.password,
+    coordinates:[req.body.lat,req.body.lng],
+    contactPhone:req.body.contactPhone,
+    address:req.body.address,
+    destination:req.body.destination,
+  }
+  Driver.create(record,(err)=>{
+    if(err)
+    console.log(err);
+    console.log("done");
+  })
+});
 
 
 app.get('/signinDel',(req,res)=>{
   res.send(layout(SignInDel()));
 });
-app.post('/signinDel', sign(DeliveryBoy)); 
+// app.post('/signinDel', sign(DeliveryBoy)); 
 app.get("/iss200.png", (req, res) => {
   res.sendFile(path.join(__dirname, "./public/iss200.png"));
 });
@@ -162,7 +175,23 @@ app.get('/orderRec',(req,res)=>{
      
   });
 });
-
+app.get('/delRec',(req,res)=>{
+  Driver.find({},(err,r)=>{
+    try{
+      res.send(r);
+    }catch{
+      res.send("No image posted");
+    }
+   
+     
+  });
+});
+app.get('/orderDel',(req,res)=>{
+  OrderPlace.deleteMany({},(err)=>{
+    if(err)
+    console.log(err);
+    });
+})
 app.get('/orderPLacement',requireLogin,async (req,res)=>{
    res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -180,10 +209,12 @@ app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
     work = false
   }
   var record={
+    product:req.body.product,
     description:req.body.description,
     destination:req.body.destination,
     coordinates:[req.body.lat,req.body.lng],
     work:work,
+    recieved:false,
     images:images
   }
   OrderPlace.create(record,(err)=>{
@@ -212,6 +243,62 @@ app.post('/geocoder/:lat/:lng',(req,res)=>{
   
 });
 
+
+app.get("/schedules", requireLogin, async (req, res) => {
+    
+      const pickups = await OrderPlace.find({ recieved: false });
+      // const zones = await Zone.find({});
+      // const trucks = await Truck.find({});
+      const drivers = await Driver.find({ status: false });
+      const des = [];
+      const del = [];
+      const stops = [];
+      const schedules = [];
+      console.log(pickups)
+
+      //sort to stops by origin
+      for (pickup of pickups) {
+        stops.push({
+          location: pickup.destination,
+          description: pickup.description,
+          _order: pickup.id,
+          product: pickup.product,
+          sort: "Pickup"
+        });
+        des.push([pickup.coordinates]);
+      }
+
+      const deviderSize = Math.floor(
+        stops.length /drivers.length
+      );
+      while (drivers.length > 0 && stops.length>0) {
+        i=0
+        min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[0][0],2)+Math.pow((drivers[0].coordinates[1])-des[0][1],2))
+        minEle = 0
+        dis =0
+        while(stops.length>i){
+            min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[i][0],2)+Math.pow((drivers[0].coordinates[1])-des[i][1],2))
+            if(dis<min){
+              min = dis
+              minEle = i
+            }
+            i++;
+        }
+        let driver = drivers.pop(0);
+        let de = des.pop(i);
+        let st = stops.pop(i);
+        if (driver === undefined) {
+          break;
+        }
+        schedules.push({
+          driverName: driver,
+          st:st,
+          de:de
+        });
+      }
+      res.send(schedules);
+    }
+  );
 
 
 // Finalizing

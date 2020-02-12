@@ -3,13 +3,15 @@ const { Schema } = mongoose;
 const OrderSchema = require("./Order");
 
 const driverSchema = new Schema({
-  id: String,
-  role: { type: String, default: "bike" },
-  address: String,
-  coordinates:[Number],
-  contactPhone: String,
-  fullName: String,
-  status:Boolean
+	email:String,
+	password:String,
+	role: { type: String, default: "bike" },
+	address: String,
+	destination:String,
+	coordinates:[Number],
+	contactPhone: String,
+	fullName: String,
+	status:{type:Boolean,default:false}
 });
 
-mongoose.model("driver", driverSchema);
+module.exports=mongoose.model("driver", driverSchema);

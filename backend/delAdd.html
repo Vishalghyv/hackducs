@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=\, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+      integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+      integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+      crossorigin=""
+    ></script>
+    <script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+    <style>
+      #issMap {
+        height: 360px;
+      }
+    </style>
+
+    <title>Fetch JSON from API and map lat lon</title>
+  </head>
+  <body>
+    <h1>Where is the ISS?</h1>
+
+    <p>
+      latitude: <span id="lat"></span>°<br />
+      longitude: <span id="lon"></span>° <br />
+    </p>
+    <form  action="/signupDel" id = "myForm" method="POST">
+    <input type="text" name="fullName" placeholder="name" >
+    <input type="text" name="email" placeholder="email" >
+    <input type="text" name="password" placeholder="password">
+    <input type="tel" name="contactPhone" placeholder="contact" required>
+    <input type="text" name="address" placeholder="address" >
+    <input type="string" name="destination" id="destination" style="width:400px" readonly/><br/>
+      Place lat: <input type="number" name="lat" id="coordlat" readonly/>
+      Place lng: <input type="number" name="lng" id="coordlng" readonly/>
+    <input type="button" id = "cl" value = "Submit">
+      <br>
+      <div id="issMap" class="map"></div>
+    
+    
+    </form>
+    <script>
+      let x = [28.631,1157.22%360];
+      // Making a map and tiles
+      // Setting a higher initial zoom to make effect more obvious
+      const mymap = L.map('issMap').setView(x, 13);
+      const attribution =
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+      const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      const tiles = L.tileLayer(tileUrl, { attribution });
+      tiles.addTo(mymap);
+
+      // Making a marker with a custom icon
+      const issIcon = L.icon({
+        iconUrl: 'iss200.png',
+        iconSize: [50, 32],
+        iconAnchor: [25, 16]
+      });
+      var marker = L.marker(x, { icon: issIcon });
+      mymap.addLayer(marker)
+
+      const api_url = 'https://api.wheretheiss.at/v1/satellites/25544';
+
+      let firstTime = true;
+      function onMapClick(e) {
+          // console.log(e);
+          // console.log(mymap);
+          // console.log(mymap._layers);
+          // alert("You clicked the map at " + e.latlng);
+          // console.log(e.latlng.lat);
+          // console.log(e.latlng.lng);
+          // console.log(e.latlng);
+          x = [e.latlng.lat,e.latlng.lng%360];
+          mymap.removeLayer(marker);
+          // console.log(mymap._layers);
+          // console.log(e.latlng);
+          marker = new L.Marker(x, { icon: issIcon });
+          mymap.addLayer(marker)
+          document.getElementById("coordlat").value = x[0];
+          document.getElementById("coordlng").value = x[1];
+          getISS();
+      }
+
+      async function getISS() {
+        const response = await fetch(api_url);
+        const data = await response.json();
+        const { latitude, longitude } = data;
+
+        // Always set the view to current lat lon and zoom!
+        mymap.setView(x, mymap.getZoom());
+        marker.setLatLng(x);
+
+        document.getElementById('lat').textContent = x[0].toFixed(5);
+        document.getElementById('lon').textContent = x[1].toFixed(5);
+        $.post( "/geocoder/"+x[0]+"/"+x[1], $('form#myForm').serialize(), function(data) {
+              document.getElementById('destination').value = data[0]["formattedAddress"];
+              // confirm("Submitted Address is :\n"+data[0]["formattedAddress"]);
+           }
+        );
+      }
+      mymap.on('click', onMapClick);
+      document.getElementById("coordlat").value = x[0];
+      document.getElementById("coordlng").value = x[1];
+      getISS();
+      // setInterval(getISS, 1000);
+      $('#cl').click( function() {
+
+         $.post( "/geocoder/"+x[0]+"/"+x[1], $('form#myForm').serialize(), function(data) {
+              confirm("Submitted Address is :\n"+data[0]["formattedAddress"]);
+           }
+        ).done(function(){
+          $("#myForm").submit();
+        });
+
+    });
+
+    </script>
+  </body>
+</html>
