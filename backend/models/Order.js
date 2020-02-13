@@ -14,7 +14,8 @@ const orderSchema = new Schema({
   // dateDelivered: Date,
   recieved:{type:Boolean,default:false},
   coordinates:[Number],
-  images: [String]
+  images: [String],
+  driverId:String
 });
 
 // mongoose.model("Order", orderSchema);

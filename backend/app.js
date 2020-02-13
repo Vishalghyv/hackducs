@@ -217,6 +217,13 @@ app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
     recieved:false,
     images:images
   }
+  driver = await schedules(record)
+  if(driver==null){
+    console.log(driver)
+  }else{
+    console.log(driver)
+  }
+  record["driverId"] = driver._id
   OrderPlace.create(record,(err)=>{
     if(err)
     console.log(err);
@@ -243,7 +250,30 @@ app.post('/geocoder/:lat/:lng',(req,res)=>{
   
 });
 
-
+async function schedules(record){
+  // const pickups = await OrderPlace.find({ recieved: false });
+  const drivers = await Driver.find({ status: false });
+  const des = [];
+  des.push([record.coordinates]);
+  const del = [];
+  const schedules = [];
+  min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[0][0],2)+Math.pow((drivers[0].coordinates[1])-des[0][1],2));
+  i=0   
+  minEle = 0
+  while (drivers.length < i) {  
+      temp = Math.sqrt(Math.pow((drivers[i].coordinates[0])-des[0][0],2)+Math.pow((drivers[i].coordinates[1])-des[0][1],2))
+      if(temp<min){
+          min = temp
+          minEle = i
+          }
+          i++;
+    }
+    let driver = drivers.pop(minEle);
+    if (driver === undefined) {
+      return null;
+    }
+  return driver
+}
 app.get("/schedules", requireLogin, async (req, res) => {
     
       const pickups = await OrderPlace.find({ recieved: false });
