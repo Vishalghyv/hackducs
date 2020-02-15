@@ -93,7 +93,6 @@ create(User));
 app.get('/signinUser',(req,res)=>{
   res.send(layout(SignInUser()));
 });
-
 app.post('/signinUser', sign(User));  
 
 app.get('/signout',requireLogin,async(req,res)=>{
@@ -136,18 +135,42 @@ app.post('/signupDel',requireLogin,async (req,res)=>{
     address:req.body.address,
     destination:req.body.destination,
   }
-  Driver.create(record,(err)=>{
+  Driver.create(record,(err,rec)=>{
     if(err)
     console.log(err);
-    console.log("done");
+    console.log(rec);
+    req.session.delivery = rec;
   })
+  // req.session.delivery = ;
 });
 
 
 app.get('/signinDel',(req,res)=>{
   res.send(layout(SignInDel()));
 });
-// app.post('/signinDel', sign(DeliveryBoy)); 
+app.post('/signinDel',(req,res)=>{
+  console.log(req.body.email);
+  console.log(req.session.user);
+   // console.log(res);
+  Driver.find({email:req.body.email},async function(err,rec){
+            for(u of rec){
+            //Prints true and flase for the correct and wrong password
+              // x = await comparePasswords(u.password,req.body.password);
+              if(req.body.password == u.password){
+                x = true
+              }else{
+                x = false
+              }
+              if(x)
+              { 
+                sess=req.session;
+                sess.delivery = u;
+                res.send(u);
+              }
+            } 
+          
+        })
+}); 
 app.get("/iss200.png", (req, res) => {
   res.sendFile(path.join(__dirname, "./public/iss200.png"));
 });
@@ -220,29 +243,22 @@ app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
   driver = await schedules(record)
   if(driver==null){
     console.log(driver)
+    record["driverId"] = null;
   }else{
+    record["driverId"] = driver._id
     console.log(driver)
   }
-  record["driverId"] = driver._id
   OrderPlace.create(record,(err)=>{
-    if(err)
-    console.log(err);
+    if(err){console.log(err);}
     console.log("done");
   })
 });
 var options = {
   provider: 'openstreetmap',
-
-  // Optional depending on the providers
-  // httpAdapter: 'https', // Default
-  // apiKey: 'YOUR_API_KEY', // for Mapquest, OpenCage, Google Premier
-  formatter: null         // 'gpx', 'string', ...
+  formatter: null
 };
 var geocoder = NodeGeocoder(options);
-// async function send_coor(req,res,next) {
-  //                           await 
 
-                        // }
 app.post('/geocoder/:lat/:lng',(req,res)=>{
   geocoder.reverse({lat:req.params.lat, lon:req.params.lng}, function(err, re) {
   res.send(re);
@@ -257,6 +273,9 @@ async function schedules(record){
   des.push([record.coordinates]);
   const del = [];
   const schedules = [];
+  if(drivers.length==0){
+    return null;
+  }
   min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[0][0],2)+Math.pow((drivers[0].coordinates[1])-des[0][1],2));
   i=0   
   minEle = 0
@@ -274,62 +293,6 @@ async function schedules(record){
     }
   return driver
 }
-app.get("/schedules", requireLogin, async (req, res) => {
-    
-      const pickups = await OrderPlace.find({ recieved: false });
-      // const zones = await Zone.find({});
-      // const trucks = await Truck.find({});
-      const drivers = await Driver.find({ status: false });
-      const des = [];
-      const del = [];
-      const stops = [];
-      const schedules = [];
-      console.log(pickups)
-
-      //sort to stops by origin
-      for (pickup of pickups) {
-        stops.push({
-          location: pickup.destination,
-          description: pickup.description,
-          _order: pickup.id,
-          product: pickup.product,
-          sort: "Pickup"
-        });
-        des.push([pickup.coordinates]);
-      }
-
-      const deviderSize = Math.floor(
-        stops.length /drivers.length
-      );
-      while (drivers.length > 0 && stops.length>0) {
-        i=0
-        min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[0][0],2)+Math.pow((drivers[0].coordinates[1])-des[0][1],2))
-        minEle = 0
-        dis =0
-        while(stops.length>i){
-            min = Math.sqrt(Math.pow((drivers[0].coordinates[0])-des[i][0],2)+Math.pow((drivers[0].coordinates[1])-des[i][1],2))
-            if(dis<min){
-              min = dis
-              minEle = i
-            }
-            i++;
-        }
-        let driver = drivers.pop(0);
-        let de = des.pop(i);
-        let st = stops.pop(i);
-        if (driver === undefined) {
-          break;
-        }
-        schedules.push({
-          driverName: driver,
-          st:st,
-          de:de
-        });
-      }
-      res.send(schedules);
-    }
-  );
-
 
 // Finalizing
 app.listen(port, hostname, () => {

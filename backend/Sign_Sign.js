@@ -5,10 +5,7 @@ const  {createPassword,comparePasswords}=require('./password');
 module.exports={
     create:(owner)=>{
         return async function(req,res){
-            req.body.googleId=uniqid();
-            req.session.userId=req.body.googleId;
             const rec= await createPassword(req.body);
-            console.log(rec);
             owner.create(rec,(err)=>{
               if(err)
               console.log(err);

@@ -20,11 +20,21 @@ module.exports={
                             }
                         },
     requireLogin: (req,res,next)=>      {
-                            // console.log(req);
-                            // console.log(res);
                           if (!req.session.user) {
                             return res.status(401).redirect('/signin');
                           }
                           next();
-                        }
+                        },
+    requireSuperLogin: (req,res,next)=>      {
+                            if (!req.session.superuser) {
+                              return res.status(401).redirect('/signinManu');
+                            }
+                            next();
+                          },
+    requireDeliveryLogin: (req,res,next)=>      {
+                              if (!req.session.delivery) {
+                                return res.status(401).redirect('/signinManu');
+                              }
+                              next();
+                            }                          
 }
