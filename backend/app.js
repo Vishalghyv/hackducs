@@ -13,6 +13,7 @@ var path = require('path')
 var mongoose = require('mongoose')
 const passport = require("passport");
 var NodeGeocoder = require('node-geocoder');
+var methodOverride=require("method-override");
 // const multer = require('multer');
 // const ejs = require('ejs');
 
@@ -23,7 +24,7 @@ const signuptempManu=require('./Manufacture/signupTemplate');
 const  {createPassword,comparePasswords}=require('./password');
 const {contactvalidity,emailexists}=require('./validators');
 const {handleErrors,requireLogin}=require('./middleware');
-const {create,sign}=require('./Sign_Sign');
+const {create,sign,update}=require('./Sign_Sign');
 
 const {layout}=require('./Users/home');
 const SignUpUser=require('./Users/SignUpform');
@@ -45,7 +46,10 @@ app.use(
     keys: ['lkasld235j']
   })
 );
-mongoose.connect("mongodb://127.0.0.1/ewaste",{
+app.use(methodOverride("_method"));
+
+
+mongoose.connect("mongodb://127.0.0.1/ewaste!",{
 	useUnifiedTopology:true,
 	useNewUrlParser:true
 }).then(()=>{
@@ -79,6 +83,13 @@ app.use(passport.session());
 //sign up route
 
 ///USER ROUTES//////////////////////
+
+app.get('/user',(req,res)=>{
+  res.send(`<a href="/signupUser/${req.session.user._id}/edit">Edit</a>
+    <a href="  ">Order</a>`)
+    
+});
+
 app.get('/signupUser',(req,res)=>{
   res.send(layout(SignUpUser()));
 });
@@ -98,7 +109,27 @@ app.post('/signinUser', sign(User));
 app.get('/signout',requireLogin,async(req,res)=>{
   req.session=null;
   res.redirect('/signup');
-})
+});
+
+app.get('/signupUser/:id/edit',async (req,res)=>{
+  res.send(`<form  action="/signupUser/${req.session.user._id}?_method=PUT" method="POST">
+    <input type="text" name="fullName" value=${req.session.user.fullName}  >
+    <input type="text" name="password" required>
+    <input type="tel" name="contactPhone" value=${req.session.user.contactPhone} required>
+    <input type="text" name="address"value=${req.session.user.address} >
+    <input type="text" name="email" value=${req.session.user.email} >
+    <input type="submit">
+    
+    
+    </form>`);
+   });
+
+app.put('/signupUser/:id',async (req,res)=>{
+  const rec= await createPassword(req.body);
+  User.findByIdAndUpdate(req.params.id,rec,(err,response)=>{
+    res.redirect('/user');
+  })
+  });
 
 ///////////////MANUFACTURER ROUTES///////////////////////////
 app.get('/signupManu',(req,res)=>{
@@ -248,6 +279,8 @@ app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
     record["driverId"] = driver._id
     console.log(driver)
   }
+  record._user=req.session.user._id;
+  console.log()
   OrderPlace.create(record,(err)=>{
     if(err){console.log(err);}
     console.log("done");

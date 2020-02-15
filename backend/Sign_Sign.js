@@ -1,6 +1,8 @@
 var uniqid = require('uniqid');
 const session = require('express-session');
 const  {createPassword,comparePasswords}=require('./password');
+const mongoose=require('mongoose');
+mongoose.set('useFindAndModify', false);
 
 module.exports={
     create:(owner)=>{
@@ -10,7 +12,7 @@ module.exports={
               if(err)
               console.log(err);
               else{
-                  res.send("Account  created");
+                  res.redirect("/user");
               }
             })
           }
@@ -20,6 +22,8 @@ module.exports={
       return (req,res)=>{
   
         owner.find({email:req.body.email},async function(err,rec){
+          if(rec.length==0)
+              res.redirect('/signupUser');
             for(u of rec){
             //Prints true and flase for the correct and wrong password
               x = await comparePasswords(u.password,req.body.password);
@@ -27,11 +31,24 @@ module.exports={
               { 
                 sess=req.session;
                 sess.user = u;
-                res.send(u);
+                res.redirect('/user');
+              }else{
+                res.redirect('/signupUser');
               }
             } 
           
         });
       }
+    },
+    update:(owner,attr,id)=>{
+      return async(req,res)=>{
+        const rec= await createPassword(attr);
+    owner.findByIdAndUpdate(id,rec,function (err,response){
+       console.log("HII");
+    });
+
+      }
+    
+      
     }
 }
