@@ -26,7 +26,7 @@ const {contactvalidity,emailexists}=require('./validators');
 const {handleErrors,requireLogin}=require('./middleware');
 const {create,sign}=require('./Sign_Sign');
 
-const superUser=require('./superuser');
+const {superUser}=require('./superuser');
 const {layout}=require('./Users/home');
 const SignUpUser=require('./Users/SignUpform');
 const SignInUser=require('./Users/SignInform');
@@ -332,18 +332,79 @@ async function schedules(record){
 }
 
  ///SUPERUSER
- app.get("/superuser",(req,res)=>{
-  User.find({},(err,r)=>{
-    try{
-      res.send(superUser(r));
-    }catch{
-      res.send("No manufacturer found");
+
+app.get('/superuser',(req,res)=>{
+  res.send(`<a href="/superuser/users">Users</a>
+  <a href="/superuser/manufacturs">Manufactures</a>
+  <a href="/superuser/deliveries">Technicians</a>`)
+})
+
+ app.get("/superuser/users",(req,res)=>{
+  User.find({},(err,rec)=>{
+    if(rec.length===0)
+    res.send("No user to delete");
+    for(let r of rec){
+      res.send(superUser("users",r));
     }
+      
   
 });
 });
 
-app.delete('/superuser/:id',(req,res)=>{
+app.delete('/superuser/users/:id',(req,res)=>{
+
+      User.findByIdAndRemove(req.params.id,(err)=>{
+        if(err)
+        console.log(err);
+        else{
+          
+          res.redirect("/superuser");
+        }
+      });
+
+    });
+
+   
+
+  
+
+
+
+app.get("/superuser/manufactures",(req,res)=>{
+  Manufacturer.find({},(err,rec)=>{
+    if(rec.length===0)
+    res.send("No manufacture  to delete");
+
+    for(let r of rec){
+      res.send(superUser("manufactures",r));
+    }
+});
+});
+
+
+app.delete('/superuser/manufactures/:id',(req,res)=>{
+Manufacturer.findByIdAndRemove(req.params.id,(err)=>{
+  if(err)
+  console.log(err);
+  else{
+    res.redirect("/superuser");
+  }
+})
+});
+
+app.get("/superuser/delivery",(req,res)=>{
+  User.find({},(err,rec)=>{
+
+    if(rec.length===0)
+    res.send("No technician to delete");
+
+    for(let r of rec){
+      res.send(superUser("delivery",r));
+    }
+});
+});
+
+app.delete('/superuser/delivery/:id',(req,res)=>{
 User.findByIdAndRemove(req.params.id,(err)=>{
   if(err)
   console.log(err);

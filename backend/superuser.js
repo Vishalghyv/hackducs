@@ -1,20 +1,19 @@
-module.exports=(records)=>{
-    const manufacturers=records.map(manu=>{
-        return `
-        <form action="/superuser/${manu._id}?_method=DELETE" method="POST">
-        <div>${manu.fullName}</div>
-        <div>${manu.contactPhone}</div>
-        <button>Delete</button>
+module.exports={
+    
+    
+    superUser:(who,record)=>{
+                     return `
+                     <form action="/superuser/${who}/${record._id}?_method=DELETE" method="POST">
+                     <div>${record.fullName}</div>
+                     <div>${record.contactPhone}</div>
+                     <button>Delete</button>
         
-        </form>
-    <br>
-     `
-    }).join('');
+                     </form>
+                    <br>`
+                },
+            
+        
+           
+    }
 
-    return `
-    
-    ${manufacturers}
-
-    `
-    
-}
+        
