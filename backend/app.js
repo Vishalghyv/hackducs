@@ -109,7 +109,7 @@ app.post('/signinUser', sign(User));
 
 app.get('/signout',requireLogin,async(req,res)=>{
   req.session=null;
-  res.redirect('/signup');
+  res.redirect('/signupUser');
 });
 
 app.get('/signupUser/:id/edit',async (req,res)=>{
