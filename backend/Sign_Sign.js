@@ -39,16 +39,5 @@ module.exports={
           
         });
       }
-    },
-    update:(owner,attr,id)=>{
-      return async(req,res)=>{
-        const rec= await createPassword(attr);
-    owner.findByIdAndUpdate(id,rec,function (err,response){
-       console.log("HII");
-    });
-
-      }
-    
-      
     }
 }

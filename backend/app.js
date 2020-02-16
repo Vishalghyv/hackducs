@@ -24,8 +24,9 @@ const signuptempManu=require('./Manufacture/signupTemplate');
 const  {createPassword,comparePasswords}=require('./password');
 const {contactvalidity,emailexists}=require('./validators');
 const {handleErrors,requireLogin}=require('./middleware');
-const {create,sign,update}=require('./Sign_Sign');
+const {create,sign}=require('./Sign_Sign');
 
+const superUser=require('./superuser');
 const {layout}=require('./Users/home');
 const SignUpUser=require('./Users/SignUpform');
 const SignInUser=require('./Users/SignInform');
@@ -86,7 +87,7 @@ app.use(passport.session());
 
 app.get('/user',(req,res)=>{
   res.send(`<a href="/signupUser/${req.session.user._id}/edit">Edit</a>
-    <a href="  ">Order</a>`)
+    <a href="/order">Your Orders</a>`)
     
 });
 
@@ -130,6 +131,18 @@ app.put('/signupUser/:id',async (req,res)=>{
     res.redirect('/user');
   })
   });
+
+app.get('/order',(req,res)=>{
+  OrderPlace.find({_user:req.session.user._id},function(err,rec){
+    for(var i=0;i<rec.length;i++)
+    {
+     return res.send(Images(rec[i]));
+    }
+      
+      
+    
+  })
+})
 
 ///////////////MANUFACTURER ROUTES///////////////////////////
 app.get('/signupManu',(req,res)=>{
@@ -207,17 +220,7 @@ app.get("/iss200.png", (req, res) => {
 });
 
 
-app.get('/orderImages',(req,res)=>{
-  OrderImages.find({},(err,r)=>{
-    try{
-      res.send(Images(r[0].images));
-    }catch{
-      res.send("No image posted");
-    }
-   
-     
-  });
-});
+
 app.get('/orderRec',(req,res)=>{
   OrderPlace.find({},(err,r)=>{
     try{
@@ -250,7 +253,7 @@ app.get('/orderPLacement',requireLogin,async (req,res)=>{
    res.sendFile(path.join(__dirname, 'index.html'));
 });
 app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
-  res.send("submitter");
+  res.send("submitted");
   var images=[];
   for(let i of req.files)
   {
@@ -279,6 +282,7 @@ app.post('/orderPLacement',upload.array('images',5),async (req,res)=>{
     record["driverId"] = driver._id
     console.log(driver)
   }
+  //assigning user id to order
   record._user=req.session.user._id;
   console.log()
   OrderPlace.create(record,(err)=>{
@@ -326,6 +330,28 @@ async function schedules(record){
     }
   return driver
 }
+
+ ///SUPERUSER
+ app.get("/superuser",(req,res)=>{
+  User.find({},(err,r)=>{
+    try{
+      res.send(superUser(r));
+    }catch{
+      res.send("No manufacturer found");
+    }
+  
+});
+});
+
+app.delete('/superuser/:id',(req,res)=>{
+User.findByIdAndRemove(req.params.id,(err)=>{
+  if(err)
+  console.log(err);
+  else{
+    res.redirect("/superuser");
+  }
+})
+});
 
 // Finalizing
 app.listen(port, hostname, () => {
